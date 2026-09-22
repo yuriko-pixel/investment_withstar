@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>星と相場のカレンダー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #EDF2F8; --surface: #FFFFFF; --surface-2: #E3EBF5; --line: #C6D3E6;
+  --ink: #12284B; --ink-2: #4F6689;
+  --star: #CF4B36; --star-soft: rgba(207,75,54,.16);
+  --real: #A87410; --real-soft: rgba(168,116,16,.18);
+  --sky: #6A46C9;
+  --today: #1F6FEB;
+  --moon-lit: #F7F1D8; --moon-dark: #1B2E52;
+  --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1E3B; --surface: #162A4E; --surface-2: #1D3560; --line: #2C4670;
+    --ink: #E7EEF9; --ink-2: #9DB1D0;
+    --star: #FF9C8A; --star-soft: rgba(255,156,138,.2);
+    --real: #F4C95D; --real-soft: rgba(244,201,93,.2);
+    --sky: #B7A0FF;
+    --today: #7CC4FF;
+    --moon-lit: #F7F1D8; --moon-dark: #0A1730;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1E3B; --surface: #162A4E; --surface-2: #1D3560; --line: #2C4670;
+  --ink: #E7EEF9; --ink-2: #9DB1D0;
+  --star: #FF9C8A; --star-soft: rgba(255,156,138,.2);
+  --real: #F4C95D; --real-soft: rgba(244,201,93,.2);
+  --sky: #B7A0FF;
+  --today: #7CC4FF;
+  --moon-lit: #F7F1D8; --moon-dark: #0A1730;
+  color-scheme: dark;
+}
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
+  font-family: var(--sans); font-size: 15px; line-height: 1.65;
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 620px; margin: 0 auto; padding: 20px 16px 48px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--today); outline-offset: 2px; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: center; padding: 8px 0 22px; }
+.dial { width: 112px; height: 112px; }
+.dial .tick { stroke: var(--line); stroke-width: 1; }
+.dial .tick.major { stroke: var(--ink-2); stroke-width: 1.4; }
+.dial .ring { fill: none; stroke: var(--line); stroke-width: 1; }
+.moon-body { fill: var(--moon-dark); stroke: var(--ink-2); stroke-width: 1; }
+.moon-lit { fill: var(--moon-lit); }
+h1 { font-family: var(--serif); font-weight: 800; font-size: 26px; line-height: 1.3; margin: 0 0 4px; letter-spacing: .02em; }
+.hero p { margin: 0; font-size: 14px; color: var(--ink-2); }
+.hero p b { color: var(--ink); font-weight: 700; }
+.now { margin-top: 8px; font-size: 14px; color: var(--ink-2); }
+.now b { color: var(--ink); font-weight: 700; }
+.now div + div { margin-top: 2px; }
+.mark { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.mark.star { background: var(--star); }
+.mark.real { background: var(--real); }
+.mark.sky { background: var(--sky); }
+
+/* Upcoming */
+h2 { font-family: var(--serif); font-weight: 800; font-size: 18px; margin: 0 0 8px; }
+.upcoming { margin-bottom: 24px; }
+.up-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.up-list li { border-bottom: 1px solid var(--line); }
+.up-row {
+  width: 100%; display: grid; grid-template-columns: 4px 64px 1fr auto; gap: 10px; align-items: center;
+  background: none; border: 0; padding: 9px 2px; text-align: left;
+}
+.up-row .bar { align-self: stretch; border-radius: 2px; }
+.up-row .bar.star { background: var(--star); }
+.up-row .bar.real { background: var(--real); }
+.up-row .bar.sky { background: var(--sky); }
+.up-row .d { font-weight: 700; font-variant-numeric: tabular-nums; }
+.up-row .d small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; line-height: 1.2; }
+.up-row .t { line-height: 1.4; }
+.up-row .t small { display: block; color: var(--ink-2); font-size: 12px; }
+.up-row .n { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Layer toggles */
+.toolbar { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500;
+}
+.chip[aria-pressed="false"] { opacity: .45; }
+.chip[aria-pressed="true"].star { border-color: var(--star); }
+.chip[aria-pressed="true"].real { border-color: var(--real); }
+.chip[aria-pressed="true"].sky { border-color: var(--sky); }
+
+/* Month header */
+.month-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 8px; }
+.month-head h2 { margin: 0; font-size: 22px; }
+.nav { display: flex; gap: 6px; }
+.nav button {
+  min-width: 40px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  font-size: 16px; line-height: 1;
+}
+.nav button.today-btn { font-size: 13px; padding: 0 12px; }
+.nav button:disabled { opacity: .35; cursor: default; }
+
+/* Calendar */
+.dow, .grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.dow div { text-align: center; font-size: 12px; color: var(--ink-2); padding: 4px 0; }
+.grid { border-top: 1px solid var(--line); border-left: 1px solid var(--line); background: var(--surface); }
+.cell, .blank { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 60px; }
+.blank { background: var(--surface-2); opacity: .5; }
+.cell {
+  position: relative; background: none; border-top: 0; border-left: 0; padding: 4px 4px 9px; text-align: left;
+  display: flex; flex-direction: column; justify-content: space-between; min-width: 0;
+}
+.cell .num { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.cell .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.cell .moon { width: 13px; height: 13px; flex: none; }
+.cell .moon .m-new { fill: var(--moon-dark); stroke: var(--ink-2); stroke-width: 1.2; }
+.cell .moon .m-full { fill: var(--moon-lit); stroke: var(--ink-2); stroke-width: 1.2; }
+.cell .marks { display: flex; gap: 3px; align-items: center; min-height: 10px; flex-wrap: wrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--real); }
+.dot.big { width: 10px; height: 10px; }
+.dot.star { background: var(--star); }
+.dia { display: inline-block; width: 7px; height: 7px; background: var(--sky); transform: rotate(45deg); margin: 0 1px; }
+.dia.big { width: 9px; height: 9px; }
+.ecl { font-size: 10px; line-height: 1; font-weight: 700; color: var(--sky); border: 1px solid var(--sky); border-radius: 3px; padding: 1px 2px; }
+.merc { font-size: 11px; line-height: 1; color: var(--star); font-weight: 700; }
+.band { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--star); opacity: .55; }
+.band.s { left: 3px; border-radius: 3px 0 0 3px; }
+.band.e { right: 3px; border-radius: 0 3px 3px 0; }
+.cell.today .num { background: var(--today); color: #fff; border-radius: 999px; padding: 0 6px; margin: -1px 0 0 -2px; }
+:root[data-theme="dark"] .cell.today .num { color: #0E1E3B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cell.today .num { color: #0E1E3B; } }
+.cell.sel { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--today); }
+.cell.sel:focus-visible { outline-offset: -2px; }
+
+/* Detail */
+.detail { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 6px; }
+.detail h3 { margin: 0 0 6px; font-family: var(--serif); font-size: 18px; font-weight: 800; }
+.item { display: grid; grid-template-columns: 4px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.item:first-of-type { border-top: 0; }
+.item .bar.star { background: var(--star); border-radius: 2px; }
+.item .bar.real { background: var(--real); border-radius: 2px; }
+.item .bar.sky { background: var(--sky); border-radius: 2px; }
+.item h4 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; }
+.item .tag { font-size: 12px; color: var(--ink-2); margin: 0 0 2px; }
+.item p { margin: 2px 0 0; font-size: 14px; color: var(--ink-2); }
+.empty { color: var(--ink-2); padding: 6px 0 12px; margin: 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin: 10px 2px 0; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend .band-sample { width: 16px; height: 4px; background: var(--star); opacity: .55; border-radius: 2px; }
+
+.foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); }
+.foot p { margin: 0 0 8px; }
+
+@media (min-width: 520px) {
+  .cell, .blank { min-height: 72px; }
+  .cell .num { font-size: 14px; }
+  h1 { font-size: 30px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .detail { animation: rise .18s ease-out; }
+  @keyframes rise { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <svg class="dial" id="dial" viewBox="0 0 112 112" role="img" aria-label="今日の月の形"></svg>
+    <div>
+      <h1>星と相場の<br>カレンダー</h1>
+      <p id="today-line"></p>
+      <div class="now" id="now"></div>
+    </div>
+  </header>
+
+  <section class="upcoming" aria-labelledby="up-h">
+    <h2 id="up-h">これから気をつけたい日</h2>
+    <ul class="up-list" id="up-list"></ul>
+  </section>
+
+  <section aria-labelledby="cal-h">
+    <div class="toolbar">
+      <h2 id="cal-h" style="margin:0">カレンダー</h2>
+      <div class="chips" role="group" aria-label="表示する印">
+        <button class="chip star" id="chip-star" aria-pressed="true"><span class="mark star"></span>水星・月</button>
+        <button class="chip sky" id="chip-sky" aria-pressed="true"><span class="mark sky"></span>食・惑星</button>
+        <button class="chip real" id="chip-real" aria-pressed="true"><span class="mark real"></span>相場の予定</button>
+      </div>
+    </div>
+    <div class="month-head">
+      <h2 id="month-title"></h2>
+      <div class="nav">
+        <button id="prev" aria-label="前の月">‹</button>
+        <button id="today-btn" class="today-btn">今日</button>
+        <button id="next" aria-label="次の月">›</button>
+      </div>
+    </div>
+    <div class="dow" aria-hidden="true"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+    <div class="grid" id="grid"></div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="band-sample"></i>水星逆行中</span>
+      <span><b class="merc">☿</b>逆行の始まり・終わり</span>
+      <span><svg class="moon" width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" style="fill:var(--moon-dark);stroke:var(--ink-2);stroke-width:1.2"/></svg>新月</span>
+      <span><svg class="moon" width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" style="fill:var(--moon-lit);stroke:var(--ink-2);stroke-width:1.2"/></svg>満月</span>
+      <span><b class="ecl">食</b>日食・月食</span>
+      <span><i class="dia"></i>惑星の角度・星座の移動</span>
+      <span><i class="dot"></i>相場の予定</span>
+      <span><i class="dot big"></i><i class="dia big"></i>特に大きい日</span>
+    </div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </section>
+
+  <footer class="foot">
+    <p>水星逆行・月の満ち欠け・惑星の角度の意味づけは占星術の俗説で、株価との統計的な関係は確認されていません。売買の根拠ではなく、気持ちを落ち着けるための暦として使ってください。</p>
+    <p>天文の日付（水星逆行、新月・満月、日食・月食、惑星の合・スクエア・オポジション、星座の移動）は計算値で、日本時間で±1日ほどずれることがあります。惑星の角度は木星・土星・天王星・海王星・冥王星どうしを大きな印で、火星との角度を小さな印で載せています。逆行のため、同じ角度を何度か通ることがあります。</p>
+    <p>相場の予定のうち、FOMC・日銀会合・米CPI・日銀短観は公表された日程です。米PCE・GDPは2026年の一部の月のみ、FOMC議事要旨は会合の3週間後という通例から出した目安です。雇用統計・SQ・オプション満期・ISMは規則から出した目安で、祝日で前後することがあります。実際に取引する前に公式の日程で確認してください。</p>
+    <p>投資判断は自己責任でお願いします。</p>
+  </footer>
+</div>
+<script>
+const RAD = Math.PI / 180;
+const EL = {
+  mercury: { a:[0.38709927,0.00000037], e:[0.20563593,0.00001906], I:[7.00497902,-0.00594749], L:[252.25032350,149472.67411175], w:[77.45779628,0.16047689], N:[48.33076593,-0.12534081] },
+  mars:    { a:[1.52371034,0.00001847], e:[0.09339410,0.00007882], I:[1.84969142,-0.00813131], L:[-4.55343205,19140.30268499], w:[-23.94362959,0.44441088], N:[49.55953891,-0.29257343] },
+  jupiter: { a:[5.20288700,0.00011607], e:[0.04838624,-0.00013253], I:[1.30439695,-0.00183714], L:[34.39644051,3034.74612775], w:[14.72847983,0.21252668], N:[100.47390909,0.20469106] },
+  saturn:  { a:[9.53667594,-0.00125060], e:[0.05386179,-0.00050991], I:[2.48599187,0.00193609], L:[49.95424423,1222.49362201], w:[92.59887831,-0.41897216], N:[113.66242448,-0.28867794] },
+  uranus:  { a:[19.18916464,-0.00196176], e:[0.04725744,-0.00004397], I:[0.77263783,-0.00242939], L:[313.23810451,428.48202785], w:[170.95427630,0.40805281], N:[74.01692503,0.04240589] },
+  neptune: { a:[30.06992276,0.00026291], e:[0.00859048,0.00005105], I:[1.77004347,0.00035372], L:[-55.12002969,218.45945325], w:[44.96476227,-0.32241464], N:[131.78422574,-0.00508664] },
+  pluto:   { a:[39.48211675,-0.00031596], e:[0.24882730,0.00005170], I:[17.14001206,0.00004818], L:[238.92903833,145.20780515], w:[224.06891629,-0.04062942], N:[110.30393684,-0.01183482] },
+  earth:   { a:[1.00000261,0.00000562], e:[0.01671123,-0.00004392], I:[-0.00001531,-0.01294668], L:[100.46457166,35999.37244981], w:[102.93768193,0.32327364], N:[0,0] }
+};
+function helio(p, T) {
+  const v = k => p[k][0] + p[k][1] * T;
+  const a = v('a'), e = v('e'), I = v('I') * RAD, L = v('L'), w = v('w'), N = v('N') * RAD;
+  let M = ((L - w) % 360 + 540) % 360 - 180; M *= RAD;
+  let E = M; for (let i = 0; i < 12; i++) E = M + e * Math.sin(E);
+  const xp = a * (Math.cos(E) - e), yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
+  const om = w * RAD - N;
+  const cO = Math.cos(N), sO = Math.sin(N), co = Math.cos(om), so = Math.sin(om), cI = Math.cos(I), sI = Math.sin(I);
+  return [
+    (co * cO - so * sO * cI) * xp + (-so * cO - co * sO * cI) * yp,
+    (co * sO + so * cO * cI) * xp + (-so * sO + co * cO * cI) * yp,
+    (so * sI) * xp + (co * sI) * yp
+  ];
+}
+function mercuryLon(jd) {
+  const T = (jd - 2451545.0) / 36525;
+  const m = helio(EL.mercury, T), e = helio(EL.earth, T);
+  return (Math.atan2(m[1] - e[1], m[0] - e[0]) / RAD + 1.396971 * T + 720) % 360;
+}
+function isRetro(jd) {
+  let d = mercuryLon(jd + 0.5) - mercuryLon(jd - 0.5);
+  d = ((d + 540) % 360) - 180;
+  return d < 0;
+}
+const SIGNS = ['牡羊座','牡牛座','双子座','蟹座','獅子座','乙女座','天秤座','蠍座','射手座','山羊座','水瓶座','魚座'];
+function mercurySign(jd) { return SIGNS[Math.floor((((mercuryLon(jd) % 360) + 360) % 360) / 30)]; }
+
+// Meeus ch.49 (main terms)
+function moonPhaseJDE(k, full) {
+  const T = k / 1236.85;
+  let jde = 2451550.09766 + 29.530588861 * k + 0.00015437 * T * T;
+  const E = 1 - 0.002516 * T - 0.0000074 * T * T;
+  const M = (2.5534 + 29.10535670 * k) * RAD;
+  const Mp = (201.5643 + 385.81693528 * k + 0.0107582 * T * T) * RAD;
+  const F = (160.7108 + 390.67050284 * k - 0.0016118 * T * T) * RAD;
+  let c;
+  if (!full) c = -0.40720*Math.sin(Mp) + 0.17241*E*Math.sin(M) + 0.01608*Math.sin(2*Mp) + 0.01039*Math.sin(2*F) + 0.00739*E*Math.sin(Mp-M) - 0.00514*E*Math.sin(Mp+M) + 0.00208*E*E*Math.sin(2*M);
+  else c = -0.40614*Math.sin(Mp) + 0.17302*E*Math.sin(M) + 0.01614*Math.sin(2*Mp) + 0.01043*Math.sin(2*F) + 0.00734*E*Math.sin(Mp-M) - 0.00515*E*Math.sin(Mp+M) + 0.00209*E*E*Math.sin(2*M);
+  return jde + c;
+}
+const jdToMs = jd => (jd - 2440587.5) * 86400000;
+const msToJd = ms => ms / 86400000 + 2440587.5;
+
+function geoLon(name, jd) {
+  const T = (jd - 2451545.0) / 36525;
+  const p = helio(EL[name], T), e = helio(EL.earth, T);
+  return (Math.atan2(p[1] - e[1], p[0] - e[0]) / RAD + 1.396971 * T + 720) % 360;
+}
+// Meeus ch.54 eclipse check for a new (k integer) or full (k+0.5) moon. Returns null or {type, gamma}
+function eclipseInfo(k, full) {
+  const T = k / 1236.85, E = 1 - 0.002516 * T - 0.0000074 * T * T;
+  const M = (2.5534 + 29.10535670 * k - 0.0000014 * T * T) * RAD;
+  const Mp = (201.5643 + 385.81693528 * k + 0.0107582 * T * T) * RAD;
+  const F = (160.7108 + 390.67050284 * k - 0.0016118 * T * T) * RAD;
+  const Om = (124.7746 - 1.56375588 * k + 0.0020672 * T * T) * RAD;
+  if (Math.abs(Math.sin(F)) > 0.36) return null;
+  const F1 = F - 0.02665 * Math.sin(Om) * RAD;
+  const P = 0.2070*E*Math.sin(M) + 0.0024*E*Math.sin(2*M) - 0.0392*Math.sin(Mp) + 0.0116*Math.sin(2*Mp) - 0.0073*E*Math.sin(Mp+M) + 0.0067*E*Math.sin(Mp-M) + 0.0118*Math.sin(2*F1);
+  const Q = 5.2207 - 0.0048*E*Math.cos(M) + 0.0020*E*Math.cos(2*M) - 0.3299*Math.cos(Mp) - 0.0060*E*Math.cos(Mp+M) + 0.0041*E*Math.cos(Mp-M);
+  const W = Math.abs(Math.cos(F1));
+  const g = (P * Math.cos(F1) + Q * Math.sin(F1)) * (1 - 0.0048 * W), ag = Math.abs(g);
+  const u = 0.0059 + 0.0046*E*Math.cos(M) - 0.0182*Math.cos(Mp) + 0.0004*Math.cos(2*Mp) - 0.0005*Math.cos(M+Mp);
+  if (!full) {
+    if (ag > 1.5433 + u) return null;
+    if (ag <= 0.9972) {
+      if (u < 0) return { type: 'total', gamma: g };
+      if (u > 0.0047) return { type: 'annular', gamma: g };
+      return { type: u < 0.00464 * Math.sqrt(1 - g * g) ? 'hybrid' : 'annular', gamma: g };
+    }
+    return { type: 'partial', gamma: g };
+  }
+  if (ag < 0.4678 - u) return { type: 'total', gamma: g };
+  if (ag < 1.0128 - u) return { type: 'partial', gamma: g };
+  if (ag < 1.5573 + u) return { type: 'penumbral', gamma: g };
+  return null;
+}
+// JST calendar key from JD
+function jstKey(jd) { const d = new Date(jdToMs(jd) + 9 * 3600000); return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0'); }
+/* ---------- helpers (JST) ---------- */
+const JST = 9 * 3600000;
+const pad = n => String(n).padStart(2, '0');
+const keyOf = (y, m, d) => y + '-' + pad(m + 1) + '-' + pad(d);          // m: 0-11
+const utcKey = t => { const d = new Date(t); return keyOf(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
+const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return { y, m: m - 1, d }; };
+const keyMs = k => { const p = parseKey(k); return Date.UTC(p.y, p.m, p.d); };
+const diffDays = (a, b) => Math.round((keyMs(b) - keyMs(a)) / 86400000);
+const WD = ['日','月','火','水','木','金','土'];
+const dowOf = k => new Date(keyMs(k)).getUTCDay();
+const nowKey = () => utcKey(Date.now() + JST);
+const fmtLong = k => { const p = parseKey(k); return p.m + 1 + '月' + p.d + '日(' + WD[dowOf(k)] + ')'; };
+const fmtShort = k => { const p = parseKey(k); return (p.m + 1) + '/' + p.d; };
+const addDaysKey = (k, n) => utcKey(keyMs(k) + n * 86400000);
+
+/* ---------- event data ---------- */
+const EV = {};            // key -> [event]
+const RETRO = new Set();  // keys of days Mercury is retrograde
+const PERIODS = [];       // {startKey,endKey,sign}
+const NEWS = [], FULLS = [], ECLS = [];
+const add = (k, e) => { (EV[k] = EV[k] || []).push(e); };
+
+const START_Y = 2025, END_Y = 2028;
+const PL = { mars: ['火星', '勢い・衝突'], jupiter: ['木星', '拡大・好況'], saturn: ['土星', '引き締め・制約'],
+             uranus: ['天王星', '急変・技術革新'], neptune: ['海王星', '熱狂・幻想'], pluto: ['冥王星', '構造の大転換'] };
+const ECL_NAME = {
+  solar: { total: '皆既日食', annular: '金環日食', hybrid: '金環皆既日食', partial: '部分日食' },
+  lunar: { total: '皆既月食', partial: '部分月食', penumbral: '半影月食' }
+};
+
+(function buildMercuryAndMoon() {
+  let prev = null, cur = null;
+  for (let t = Date.UTC(2024, 11, 1); t < Date.UTC(END_Y + 1, 0, 1); t += 86400000) {
+    const jd = msToJd(t + 3 * 3600000);           // JST noon
+    const r = isRetro(jd), k = utcKey(t);
+    if (r) RETRO.add(k);
+    if (prev !== null && r !== prev) {
+      if (r) {
+        cur = { startKey: k, endKey: null, sign: mercurySign(jd) };
+        PERIODS.push(cur);
+        add(k, { layer: 'star', kind: 'retroStart', w: 2, title: '水星逆行のはじまり', sign: cur.sign });
+      } else {
+        if (cur) cur.endKey = k;
+        add(k, { layer: 'star', kind: 'retroEnd', w: 2, title: '水星が順行に戻る', sign: mercurySign(jd) });
+      }
+    }
+    prev = r;
+  }
+  const k0 = Math.round((START_Y - 2000) * 12.3685) - 2, k1 = Math.round((END_Y + 1 - 2000) * 12.3685) + 2;
+  for (let k = k0; k <= k1; k++) {
+    const jn = moonPhaseJDE(k, false), jf = moonPhaseJDE(k + 0.5, true);
+    NEWS.push(jn); FULLS.push(jf);
+    [[jn, 'new', eclipseInfo(k, false), 'solar'], [jf, 'full', eclipseInfo(k + 0.5, true), 'lunar']].forEach(([jd, phase, ec, side]) => {
+      const key = jstKey(jd);
+      if (ec) {
+        const e = { layer: 'sky', kind: 'eclipse', side, phase, etype: ec.type, w: ec.type === 'penumbral' ? 1 : 2, title: ECL_NAME[side][ec.type] };
+        add(key, e); ECLS.push({ key, e });
+      } else {
+        add(key, { layer: 'star', kind: phase, phase, w: 1, title: phase === 'new' ? '新月' : '満月' });
+      }
+    });
+  }
+})();
+
+(function buildPlanets() {
+  const SLOW = ['jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+  const pairs = [];
+  for (let i = 0; i < SLOW.length; i++) for (let j = i + 1; j < SLOW.length; j++) pairs.push([SLOW[i], SLOW[j]]);
+  SLOW.forEach(p => pairs.push(['mars', p]));
+  const names = ['mars', ...SLOW];
+  const norm = x => ((x % 360) + 540) % 360 - 180;
+  let prev = null;
+  for (let t = Date.UTC(2024, 11, 1); t < Date.UTC(END_Y + 1, 0, 1); t += 86400000) {
+    const jd = msToJd(t + 3 * 3600000);
+    const L = {}; names.forEach(n => { L[n] = geoLon(n, jd); });
+    if (prev) {
+      pairs.forEach(([a, b]) => {
+        [0, 90, 180, 270].forEach(ang => {
+          const d = norm(L[a] - L[b] - ang), dp = norm(prev.L[a] - prev.L[b] - ang);
+          if ((d < 0) !== (dp < 0) && Math.abs(d) < 8 && Math.abs(dp) < 8) {
+            const f = dp / (dp - d), key = jstKey(prev.jd + f * (jd - prev.jd));
+            const angle = ang === 270 ? 90 : ang;
+            const isMars = a === 'mars';
+            const w = isMars ? 1 : (a === 'saturn' || b === 'saturn' || (a !== 'jupiter')) ? 3 : 2;
+            const an = angle === 0 ? 'の合' : angle === 90 ? 'のスクエア(90°)' : 'のオポジション(180°)';
+            add(key, { layer: 'sky', kind: 'aspect', w, angle, a, b, title: PL[a][0] + 'と' + PL[b][0] + an });
+          }
+        });
+      });
+      SLOW.forEach(n => {
+        const s0 = Math.floor(prev.L[n] / 30), s1 = Math.floor(L[n] / 30);
+        if (s0 !== s1) {
+          const fwd = s1 === (s0 + 1) % 12;
+          const key = jstKey(jd);
+          add(key, { layer: 'sky', kind: 'ingress', w: 2, planet: n, fwd, sign: SIGNS[s1],
+            title: PL[n][0] + 'が' + SIGNS[s1] + (fwd ? 'に入る' : 'に戻る（逆行）') });
+        }
+      });
+    }
+    prev = { L, jd };
+  }
+})();
+
+(function buildReal() {
+  const nth = (y, m, n, dow) => {                    // n-th weekday of month
+    const first = new Date(Date.UTC(y, m, 1)).getUTCDay();
+    return 1 + ((dow - first + 7) % 7) + (n - 1) * 7;
+  };
+  const NFP_FIX = { '2026-07-03': '2026-07-02', '2027-01-01': '2027-01-08' };
+  const R = (k, e) => add(k, Object.assign({ layer: 'real' }, e));
+  for (let y = START_Y; y <= END_Y; y++) {
+    for (let m = 0; m < 12; m++) {
+      const quarter = m % 3 === 2;
+      R(keyOf(y, m, nth(y, m, 2, 5)), { kind: 'sq', w: quarter ? 3 : 2, major: quarter, title: quarter ? 'メジャーSQ（日本）' : 'SQ（日本）' });
+      R(keyOf(y, m, nth(y, m, 3, 5)), { kind: 'opex', w: quarter ? 2 : 1, major: quarter, title: quarter ? '米・四半期の満期日' : '米オプション満期' });
+      const ry = m === 0 ? y - 1 : y, rm = m === 0 ? 11 : m - 1;
+      const d12 = new Date(Date.UTC(ry, rm, 12)).getUTCDay();
+      let nk = utcKey(Date.UTC(ry, rm, 12 + (6 - d12) + 20));
+      if (NFP_FIX[nk]) nk = NFP_FIX[nk];
+      R(nk, { kind: 'nfp', w: 2, title: '米雇用統計' });
+      let d = 1;                                     // ISM製造業: 月の最初の営業日
+      while ([0, 6].includes(new Date(Date.UTC(y, m, d)).getUTCDay()) || (m === 0 && d === 1)) d++;
+      R(keyOf(y, m, d), { kind: 'ism', w: 1, title: '米ISM製造業景況指数' });
+    }
+  }
+  const FOMC = ['2026-01-28','2026-03-18','2026-04-29','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09'];
+  FOMC.forEach(k => {
+    R(k, { kind: 'fomc', w: 3, major: true, title: 'FOMC 政策金利発表' });
+    R(addDaysKey(k, 21), { kind: 'minutes', w: 1, title: 'FOMC 議事要旨' });
+  });
+  const OUTLOOK = ['2026-01-23','2026-04-28','2026-07-31','2026-10-30','2027-01-22','2027-04-28','2027-07-22','2027-10-29'];
+  ['2026-01-23','2026-03-19','2026-04-28','2026-06-16','2026-07-31','2026-09-18','2026-10-30','2026-12-18',
+   '2027-01-22','2027-03-18','2027-04-28','2027-06-11','2027-07-22','2027-09-22','2027-10-29','2027-12-17']
+    .forEach(k => R(k, { kind: 'boj', w: 2, outlook: OUTLOOK.includes(k), title: '日銀 金融政策決定会合（最終日）' }));
+  ['2026-01-13','2026-02-13','2026-03-11','2026-04-10','2026-05-12','2026-06-10','2026-07-14','2026-08-12','2026-09-11','2026-10-14','2026-11-10','2026-12-10']
+    .forEach(k => R(k, { kind: 'cpi', w: 2, title: '米CPI（消費者物価）' }));
+  ['2026-05-28','2026-06-25','2026-09-30','2026-10-29','2026-11-25']
+    .forEach(k => R(k, { kind: 'pce', w: 2, title: '米PCE（個人消費支出）' }));
+  R('2026-09-30', { kind: 'gdp', w: 1, title: '米GDP（4-6月期・確定値）' });
+  R('2026-10-29', { kind: 'gdp', w: 2, title: '米GDP（7-9月期・速報）' });
+  R('2026-11-25', { kind: 'gdp', w: 1, title: '米GDP（7-9月期・改定値）' });
+  R('2026-10-01', { kind: 'tankan', w: 2, title: '日銀短観（9月調査）' });
+  R('2026-11-03', { kind: 'election', w: 2, title: '米中間選挙' });
+  R('2028-11-07', { kind: 'election', w: 2, title: '米大統領選' });
+})();
+
+/* ---------- copy ---------- */
+const ASTRO_TAG = '占星術の見方（統計的な裏付けはありません）';
+const REAL_TAG = '相場の予定';
+const JP_NIGHT = '日本時間の夜21:30または22:30';
+function describe(e) {
+  switch (e.kind) {
+    case 'retroStart': return { tag: ASTRO_TAG, sub: e.sign + 'で逆行', note: '水星逆行の入口。占星術では、契約・通信・移動のトラブルや判断ミスが増えるとされ、新しい大きな決断は避けるのが定石と言われます。' };
+    case 'retroEnd': return { tag: ASTRO_TAG, sub: e.sign + 'で順行', note: '逆行が終わる日。混乱が落ち着き、保留していた判断を動かしやすくなるとされます。切り替わりの前後1〜2日は「まだ不安定」と見る人もいます。' };
+    case 'retro': return { tag: ASTRO_TAG, sub: '', note: '水星逆行の期間中。占星術では、見落としや行き違いが起きやすい時期とされます。' };
+    case 'new': return { tag: ASTRO_TAG, sub: '', note: '月と太陽が重なる日。占星術では、相場の「底入れ・反転」の節目になりやすいと言われます。' };
+    case 'full': return { tag: ASTRO_TAG, sub: '', note: '月が満ちきる日。感情が高ぶりやすく、「天井や急変が起きやすい」と言われます。' };
+    case 'eclipse': {
+      const sol = e.side === 'solar';
+      const base = sol ? '新月に太陽が隠れる日。' : '満月に月が地球の影に入る日。';
+      const tail = e.etype === 'penumbral' ? 'ほとんど目に見えない弱い月食で、占星術でも影響は小さめとされます。' : '占星術では、数週間から半年ほど続く「流れの切り替わり」の合図とされ、この前後は相場の向きが変わりやすいと見る人がいます。';
+      return { tag: ASTRO_TAG, sub: sol ? '新月と重なる' : '満月と重なる', note: base + tail };
+    }
+    case 'aspect': {
+      const ka = PL[e.a], kb = PL[e.b];
+      const sub = ka[1] + ' × ' + kb[1];
+      let note;
+      if (e.angle === 0) note = '二つの惑星が同じ位置に重なり、新しいサイクルが始まるとされる日。';
+      else if (e.angle === 90) note = '90度の角度で、対立や摩擦が強まるとされる日。急な調整や転換が起きやすいと言われます。';
+      else note = '180度で向かい合い、両極が引っ張り合うとされる日。過熱や転換点として注目されます。';
+      if (e.a === 'mars') note = '火星は動きが速いので、影響は短期間とされる小さな印です。' + note;
+      else note += '逆行のため、この角度を前後で何度か通ることがあります。';
+      return { tag: ASTRO_TAG, sub, note };
+    }
+    case 'ingress': return { tag: ASTRO_TAG, sub: PL[e.planet][1], note: e.fwd
+      ? '動きの遅い惑星が新しい星座に移る日。占星術では、数年単位の相場のテーマが切り替わる節目とされます。'
+      : '逆行で前の星座に戻る動き。テーマが一時的に元に戻る、と見る人もいます。' };
+    case 'nfp': return { tag: REAL_TAG, sub: JP_NIGHT, note: '米国の雇用の強さを示す指標。金利や為替の見方が変わり、ドル円や株価指数が大きく動くことが多い日です。' };
+    case 'cpi': return { tag: REAL_TAG, sub: JP_NIGHT, note: '米国の物価の動きを示す指標。利上げ・利下げの見方を左右し、発表直後に為替や株価指数が大きく動きやすい日です。' };
+    case 'pce': return { tag: REAL_TAG, sub: JP_NIGHT, note: 'FRBが最も重視する物価の指標。CPIより反応は穏やかですが、金利見通しの材料になります。' };
+    case 'gdp': return { tag: REAL_TAG, sub: JP_NIGHT, note: '米国の四半期の成長率。' + (e.w >= 2 ? '速報値は景気の見方を左右するため、特に注目されます。' : '速報値からの修正が中心で、動きは小さめのことが多いです。') };
+    case 'ism': return { tag: REAL_TAG, sub: '日本時間の深夜前後', note: '米国の製造業の景況感。50が好況・不況の分かれ目で、雇用統計の前の手がかりにもなります。' };
+    case 'minutes': return { tag: REAL_TAG, sub: '日本時間では翌日の早朝', note: '前回のFOMCの議論の中身が公開されます。金利の見通しが動くことがあります。' };
+    case 'tankan': return { tag: REAL_TAG, sub: '朝8:50', note: '日銀が行う企業の景況感調査。日本株や円相場に響き、日銀の政策判断の材料にもなります。' };
+    case 'election': return { tag: REAL_TAG, sub: '結果は日本時間の翌日', note: '議会の勢力図が変わると、財政や規制の見通しが動きます。開票が進むにつれて相場が反応することがあります。' };
+    case 'sq': return { tag: REAL_TAG, sub: e.major ? '四半期のSQ' : '', note: '日本株の先物・オプションの決済値が決まる日。朝の寄り付きで値が飛びやすく、午前中に荒れがちです。' + (e.major ? '3・6・9・12月のメジャーSQは特に出来高が増えます。' : '') };
+    case 'opex': return { tag: REAL_TAG, sub: e.major ? '四半期の満期日' : '', note: '米国株のオプション満期日。' + (e.major ? '3・6・9・12月は株価指数先物なども重なり、引け際の出来高が膨らみやすい日です。' : '引けにかけて値動きが荒れることがあります。') };
+    case 'fomc': return { tag: REAL_TAG, sub: '日本時間では翌日の早朝', note: '米国の政策金利の発表と議長会見。世界の株・為替・債券が同時に動きやすい、年8回の大きな節目です。' };
+    case 'boj': return { tag: REAL_TAG, sub: e.outlook ? '展望レポートあり・結果は昼ごろ' : '結果は昼ごろ、会見は午後', note: '日銀の金融政策の発表。円相場や銀行株が動きやすい日です。' + (e.outlook ? '経済・物価の見通しも同時に示されます。' : '') };
+  }
+  return { tag: '', sub: '', note: '' };
+}
+
+/* ---------- moon drawing ---------- */
+function moonPath(f, cx, cy, r) {
+  const k = Math.cos(2 * Math.PI * f), rx = (r * Math.abs(k)).toFixed(2);
+  if (f < 0.5) return `M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} A ${rx} ${r} 0 0 ${k > 0 ? 0 : 1} ${cx} ${cy - r} Z`;
+  return `M ${cx} ${cy - r} A ${r} ${r} 0 0 0 ${cx} ${cy + r} A ${rx} ${r} 0 0 ${k > 0 ? 1 : 0} ${cx} ${cy - r} Z`;
+}
+function phaseName(f) {
+  if (f < 0.03 || f > 0.97) return '新月';
+  if (f < 0.22) return '三日月ごろ';
+  if (f < 0.28) return '上弦の月';
+  if (f < 0.47) return '満ちていく月';
+  if (f < 0.53) return '満月';
+  if (f < 0.72) return '欠けていく月';
+  if (f < 0.78) return '下弦の月';
+  return '有明の月';
+}
+
+/* ---------- state ---------- */
+const state = { y: 0, m: 0, sel: '', star: true, sky: true, real: true };
+const $ = id => document.getElementById(id);
+const TODAY = nowKey();
+
+function visible(e) { return state[e.layer]; }
+function itemsFor(k) {
+  let list = (EV[k] || []).slice();
+  if (RETRO.has(k) && !list.some(e => e.kind === 'retroStart')) list.push({ layer: 'star', kind: 'retro', w: 0, title: '水星逆行中' });
+  return list.filter(visible).sort((a, b) => b.w - a.w);
+}
+
+/* ---------- hero ---------- */
+function renderHero() {
+  const nowJd = msToJd(Date.now());
+  let pi = -1; NEWS.forEach((j, i) => { if (j <= nowJd) pi = i; });
+  const f = (nowJd - NEWS[pi]) / (NEWS[pi + 1] - NEWS[pi]);
+  const age = f * 29.53;
+  let svg = '';
+  for (let i = 0; i < 60; i++) {
+    const a = i * 6 * Math.PI / 180, major = i % 5 === 0, r1 = major ? 47 : 50, r2 = 54;
+    svg += `<line class="tick${major ? ' major' : ''}" x1="${(56 + r1 * Math.sin(a)).toFixed(2)}" y1="${(56 - r1 * Math.cos(a)).toFixed(2)}" x2="${(56 + r2 * Math.sin(a)).toFixed(2)}" y2="${(56 - r2 * Math.cos(a)).toFixed(2)}"/>`;
+  }
+  svg += `<circle class="moon-body" cx="56" cy="56" r="32"/><path class="moon-lit" d="${moonPath(f, 56, 56, 32)}"/>`;
+  $('dial').innerHTML = svg;
+  $('dial').setAttribute('aria-label', '今日の月：' + phaseName(f));
+
+  $('today-line').textContent = fmtLong(TODAY);
+  const nf = FULLS.find(j => j > nowJd), nn = NEWS.find(j => j > nowJd);
+  const dF = diffDays(TODAY, jstKey(nf)), dN = diffDays(TODAY, jstKey(nn));
+  const moonNext = dF <= dN ? `満月まであと${dF}日` : `新月まであと${dN}日`;
+  let merc;
+  const cur = PERIODS.find(p => p.endKey && RETRO.has(TODAY) && p.startKey <= TODAY && TODAY < p.endKey);
+  if (cur) {
+    merc = `水星は<b>逆行中</b>。${fmtShort(cur.endKey)}に順行へ戻ります（あと${diffDays(TODAY, cur.endKey)}日）`;
+  } else {
+    const nx = PERIODS.find(p => p.startKey > TODAY && p.endKey);
+    merc = nx ? `水星は<b>順行中</b>。次の逆行は${fmtShort(nx.startKey)}〜${fmtShort(nx.endKey)}（${nx.sign}）` : '水星は順行中';
+  }
+  const ne = ECLS.filter(x => x.key >= TODAY && x.e.w >= 2).sort((a, b) => a.key.localeCompare(b.key))[0];
+  const eclLine = ne ? `<div><span class="mark sky"></span>次の食は<b>${parseKey(ne.key).y}/${fmtShort(ne.key)}</b>（${ne.e.title}）</div>` : '';
+  $('now').innerHTML = `<div><span class="mark star"></span>${merc}</div><div><span class="mark star"></span><b>${phaseName(f)}</b>（月齢${age.toFixed(1)}）・${moonNext}</div>${eclLine}`;
+}
+
+/* ---------- upcoming ---------- */
+function renderUpcoming() {
+  const rows = [];
+  for (let i = 0; i <= 700 && rows.length < 8; i++) {
+    const k = addDaysKey(TODAY, i);
+    (EV[k] || []).filter(e => e.w >= 2 && visible(e)).sort((a, b) => b.w - a.w).forEach(e => rows.push({ k, e, i }));
+  }
+  const ul = $('up-list'); ul.innerHTML = '';
+  if (!rows.length) { ul.innerHTML = '<li style="padding:10px 2px;color:var(--ink-2)">下の切り替えで、表示する印を1つ以上選んでください。</li>'; return; }
+  rows.slice(0, 8).forEach(({ k, e, i }) => {
+    const d = describe(e);
+    const li = document.createElement('li');
+    const b = document.createElement('button'); b.className = 'up-row';
+    b.innerHTML = `<span class="bar ${e.layer}"></span><span class="d">${fmtShort(k)}<small>${parseKey(k).y !== parseKey(TODAY).y ? parseKey(k).y + '年・' : ''}${WD[dowOf(k)]}曜</small></span><span class="t">${e.title}${d.sub ? `<small>${d.sub}</small>` : ''}</span><span class="n">${i === 0 ? '今日' : 'あと' + i + '日'}</span>`;
+    b.addEventListener('click', () => { const p = parseKey(k); state.y = p.y; state.m = p.m; state.sel = k; render(); $('cal-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    li.appendChild(b); ul.appendChild(li);
+  });
+}
+
+/* ---------- calendar ---------- */
+const moonSvg = cls => `<svg class="moon" viewBox="0 0 14 14" aria-hidden="true"><circle class="${cls}" cx="7" cy="7" r="5.5"/></svg>`;
+
+function renderGrid() {
+  const { y, m } = state;
+  $('month-title').textContent = y + '年 ' + (m + 1) + '月';
+  $('prev').disabled = (y === START_Y && m === 0);
+  $('next').disabled = (y === END_Y && m === 11);
+  const first = new Date(Date.UTC(y, m, 1)).getUTCDay();
+  const dim = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const g = $('grid'); g.innerHTML = '';
+  for (let i = 0; i < first; i++) { const b = document.createElement('div'); b.className = 'blank'; g.appendChild(b); }
+  for (let d = 1; d <= dim; d++) {
+    const k = keyOf(y, m, d), items = itemsFor(k);
+    const evs = items.filter(e => e.kind !== 'retro');
+    const btn = document.createElement('button');
+    btn.className = 'cell' + (k === TODAY ? ' today' : '') + (k === state.sel ? ' sel' : '');
+    const moon = evs.find(e => e.phase);
+    let marks = '';
+    evs.forEach(e => {
+      if (e.kind === 'retroStart' || e.kind === 'retroEnd') marks += '<span class="merc">☿</span>';
+      else if (e.kind === 'eclipse') marks += e.w >= 2 ? '<span class="ecl">食</span>' : '';
+      else if (e.layer === 'sky') marks += `<i class="dia${e.w >= 3 ? ' big' : ''}"></i>`;
+      else if (e.layer === 'real') marks += `<i class="dot${e.w >= 3 ? ' big' : ''}"></i>`;
+    });
+    let band = '';
+    if (state.star && RETRO.has(k)) {
+      const prevIn = RETRO.has(addDaysKey(k, -1)), nextIn = RETRO.has(addDaysKey(k, 1));
+      band = `<span class="band${!prevIn ? ' s' : ''}${!nextIn ? ' e' : ''}"></span>`;
+    }
+    btn.innerHTML = `<span class="top"><span class="num">${d}</span>${moon ? moonSvg(moon.phase === 'new' ? 'm-new' : 'm-full') : ''}</span><span class="marks">${marks}</span>${band}`;
+    btn.setAttribute('aria-label', fmtLong(k) + (items.length ? '：' + items.map(e => e.title).join('、') : ''));
+    btn.addEventListener('click', () => { state.sel = k; renderGrid(); renderDetail(); });
+    g.appendChild(btn);
+  }
+}
+
+function renderDetail() {
+  const k = state.sel, box = $('detail'), items = itemsFor(k);
+  let html = `<h3>${fmtLong(k)}${k === TODAY ? '（今日）' : ''}</h3>`;
+  if (!items.length) {
+    html += '<p class="empty">この日は目立った印がありません。</p>';
+  } else {
+    items.forEach(e => {
+      const d = describe(e);
+      html += `<div class="item"><span class="bar ${e.layer}"></span><div><p class="tag">${d.tag}${d.sub ? '・' + d.sub : ''}</p><h4>${e.title}</h4><p>${d.note}</p></div></div>`;
+    });
+  }
+  box.style.animation = 'none'; void box.offsetWidth; box.style.animation = '';
+  box.innerHTML = html;
+}
+
+function render() { renderUpcoming(); renderGrid(); renderDetail(); }
+
+/* ---------- wiring ---------- */
+(function init() {
+  const t = parseKey(TODAY);
+  state.y = Math.min(Math.max(t.y, START_Y), END_Y); state.m = t.m; state.sel = TODAY;
+  $('prev').addEventListener('click', () => { if (--state.m < 0) { state.m = 11; state.y--; } renderGrid(); });
+  $('next').addEventListener('click', () => { if (++state.m > 11) { state.m = 0; state.y++; } renderGrid(); });
+  $('today-btn').addEventListener('click', () => { const p = parseKey(TODAY); state.y = p.y; state.m = p.m; state.sel = TODAY; renderGrid(); renderDetail(); });
+  ['star', 'sky', 'real'].forEach(n => $('chip-' + n).addEventListener('click', e => {
+    state[n] = !state[n]; e.currentTarget.setAttribute('aria-pressed', String(state[n])); render();
+  }));
+  renderHero(); render();
+})();
+
+</script>
+</body>
+</html>
